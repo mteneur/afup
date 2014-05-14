@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en" ng-app="confApp">
+<head>
+  <meta charset="utf-8">
+  <title>Google Phone Gallery</title>
+  <link rel="stylesheet" href="css/app.css">
+  <link rel="stylesheet" href="css/bootstrap.css">
+  <link rel="stylesheet" href="http://afup.org/templates/phptourlyon2014/medias/css/style.css" type="text/css" media="all" />
+  <script src="lib/angular/moment.min.js"></script>
+  <script src="lib/angular/angular.js"></script>
+  <script src="js/mytests.js"></script>
+  <script src="js/controllers.js"></script>
+ 
+</head>
+<body ng-controller="confCtrl" style="background-color:{{bgColor}}">
+  <div class="container-fluid">
+    <div class="row-fluid">
+      <div class="span2">
+        <!--Sidebar content-->
+
+        Search: <input ng-model="search.detail" ng-change="changed(this.search.detail,'search.detail')">
+				
+        Salles:
+        <select ng-model="search.salle" ng-change="changed(this.search.salle,'search.salle')">
+          <option ng-repeat="salle in salles">{{salle}}</option>
+          <option value="">toutes</option>
+        </select>
+		Langue:
+        <select ng-model="search.lang" ng-change="changed(this.search.lang,'search.lang')">
+          <option ng-repeat="lang in languages">{{lang}}</option>
+          <option value="">toutes</option>
+        </select>
+		
+      </div>
+	  
+	  <input ng-model="color" ng-keyup="changeBackground(color)" ><div  ng-click="changeBackground(color)"> apply </div>
+	  <img id="monID" ng-click="affiche($event)" src="http://t3.gstatic.com/images?q=tbn:ANd9GcRvFBcxJRJtI0_XEd5rvOTMIWnB8aInp3f33GYrxJK-iZcY5QwJhgZFX1Kd" >
+      <div class="span10">
+        <!--Body content-->
+
+        <ul class="sessions">
+          <li ng-repeat="conf in confs | filter:search | orderBy:conf.date_start">
+            <div id="{{conf.id}}" ng-click="affiche($event)" style="z-index:100" class="session boss geek" conference></div>
+          </li>
+        </ul>
+
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

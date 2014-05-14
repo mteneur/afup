@@ -1,0 +1,22 @@
+			<h3> {{conf.name}}</h3>
+			<div class="horaire">
+				{{getDate(conf.date) | date : "dd/MM/yyyy"}} <strong>duree : {{getDuree(conf.date_end,conf.date_start)}}</strong>
+			</div>
+			<div class="salle">{{conf.salle}}</div>
+			<br>
+			<br>
+			<div class="spacer"></div>
+			<div class="details">
+				<div class="abstract"><p ng-if="conf.lang == 'EN'"><img src="https://farm3.staticflickr.com/2939/13981239781_a4383ff08e_t.jpg" alt="picto-en30x30" width="30" height="30"></p>
+<p>{{conf.detail}}</p></div>
+	   			<div class="conferenciers">
+			    	<div ng-repeat="conferencier in conf.conferenciers | filter:search" class="conferencier">
+			    		<a href="http://afup.org/pages/phptourlyon2014/{{conferencier.link}}" target="_blank"><img src="{{conferencier.img}}" alt="{{conferencier.name}}" border="0" height="120"></a>
+			    		<br>
+	          			<a href="http://afup.org/pages/phptourlyon2014/{{conferencier.link}}" target="_blank">Conferencier : {{conferencier.name}}</a>
+	          		</div>
+							<div class="spacer"></div>
+		</div>
+   		</div>
+
+          
