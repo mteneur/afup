@@ -4,3 +4,11 @@ body {
   padding-top: 20px;
 }
 
+.selected{
+border : solid;
+border-color:#98bf21;
+}
+
+.saved{
+background-color:#A9F5A9;
+}

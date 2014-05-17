@@ -12,9 +12,9 @@
   <script src="js/controllers.js"></script>
  
 </head>
-<body ng-controller="confCtrl" style="background-color:{{bgColor}}">
+<body  style="background-color:{{bgColor}}">
   <div class="container-fluid">
-    <div class="row-fluid">
+    <div class="row-fluid" ng-controller="confCtrl">
       <div class="span2">
         <!--Sidebar content-->
 
@@ -31,6 +31,8 @@
           <option value="">toutes</option>
         </select>
 		
+		<input type='button' ng-click="fireSelectEvent('1128')" value="Select example"/>
+		<input type='button' ng-click="fireSaveEvent('1128')" value="Save example"/>
       </div>
 	  
 	  <input ng-model="color" ng-keyup="changeBackground(color)" ><div  ng-click="changeBackground(color)"> apply </div>
@@ -38,14 +40,15 @@
       <div class="span10">
         <!--Body content-->
 
-        <ul class="sessions">
-          <li ng-repeat="conf in confs | filter:search | orderBy:conf.date_start">
-            <div id="{{conf.id}}" ng-click="affiche($event)" style="z-index:100" class="session boss geek" conference></div>
+        <ul class="sessions" >
+          <li ng-repeat="conf in confs | filter:search | orderBy:conf.date_start" trigger>
+            <div id="{{conf.id}}" style="z-index:100" class="session boss geek" my-conference ng-click="fireSelectEvent(conf.id)" ng-class="{selected:(selectedConf==conf.id),saved:savedConf[conf.id]}"></div>
           </li>
         </ul>
 
       </div>
     </div>
+	<div ng-controller="exampleCtrl">{{msg}}</div>
   </div>
 
 </body>
