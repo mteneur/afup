@@ -1,9 +1,14 @@
 'use strict';
+
+/** constants **/
+var SELECT = "select";
+var SAVE = "save";
+
+/** tools , TODO: externalize it **/
 var DATE_START = 1;
 var DATE_END = 2;
 var DATE = 3;
 
-/** tools **/
 function unset(array,search){
 	var index = array.indexOf(search);
 	
@@ -37,97 +42,26 @@ function inArray(needle, haystack) {
 function getId(strLink) {
 	return strLink.split("#")[1];
 }
-/** **/
+/** end tools **/
 
-/** event manager for external tools 
-use it to interact with angular **/
-
-
-function eventHandlerSingleton(eventId){
-	 if ( arguments.callee._singletonInstance )
-		return arguments.callee._singletonInstance;
-	 arguments.callee._singletonInstance = this;
-	 
-	 this.event = new Event(eventId);
-}
-/**
-function eventHandler() {
- 
-	if ( typeOf maClasse.initialized == "undefined" ) {
-	eventHandler.prototype.getListener(eventId) = function() {
-		return new eventHandlerSingleton(eventId);
-	// code
-	}
-
-	eventHandler.prototype.getTrigger(eventId) = function() {
-	// code
-	}
-	eventHandler.initialized = true;
-}
-
-  
-
-  event.eventName = "name-of-custom-event";
-
-  if (document.createEvent) {
-    element.dispatchEvent(event);
-  } else {
-    element.fireEvent("on" + event.eventType, event);
-  }
- 
- }
-
-/** **/
-
-//this.event = new Event("test");
 
 /* Controllers */
 
+//afup php tour conference app
 var confApp = angular.module('confApp', []);
 
-confApp.directive('myConference', [function() {
 
-	/*function test (scope, element, attr) {
-		 element.on('mousedown', function(event) {
-			console.log(element.attr("id"));
-			$rootScope.$broadcast('test', "tutu");
-		  });
-	  };*/
-	  
+
+/**
+	conference directive, use it to display a conference 
+**/
+confApp.directive('myConference', [function() {
     return {
-	  //link:test,
       templateUrl: 'conference.html'
     };
 }]);
 
 
-confApp.directive('oldtrigger', [function($rootScope) {
-
-
-	function linked($rootScope, element, attr) {
-		 element.on('mousedown', function(event) {
-			//perform(element);
-			$rootScope.$broadcast('test', "test");
-			console.log(element.attr("id"));
-		  });
-	  };
-	  
-	 return {
-	  link:linked
-	  };
-}]);
-
-
-function goReceive(){
-	alert("receive");
-}
-/**
-function triggerFunction(rootScope,msg) {
-			console.log('firing: ' + msg);
-			rootScope.broadcast('test', msg);
-};
-
-**/
 
 
 
@@ -135,6 +69,10 @@ function triggerFunction(rootScope,msg) {
 var BUTTON_MESSAGE = "button";
 
 
+/** 
+eventHandler service
+used to share event between multiple controllers
+**/
 confApp.service('eventHandler', function($rootScope) {
 
 		var mapFnEvent = new Array();
@@ -151,39 +89,18 @@ confApp.service('eventHandler', function($rootScope) {
 					console.log('received: ' + eventId + " msg:" +msg);
             });
 		};
-		
-		/**this.linkEvent = function(eventId,fn) {
-			
-			if (typeof mapFnEvent[eventId] == 'undefined') {
-				mapFnEvent[eventId] = new Array();
-			}
-			
-			if(typeof(fn) === "function") {
-				var index = mapFnEvent[eventId].length;
-				mapFnEvent[eventId][index] = fn;
-			}
-			
-			$rootScope.$on(eventId, function(event, msg) {
-				mapFnEvent[eventId].forEach(function(fn) {
-					if(typeof(fn) === "function")
-						fn(eventId, msg);
-					console.log('received: ' + eventId + " msg:" +msg);
-				});
-            });
-		};**/
+
 });
-/**
-confApp.factory('fireEvent', function(eventId,msg) {
-			console.log('firing: ' + msg);
-			$rootScope.$broadcast(eventId, msg);
-		});**/
+
 
  
+ /**
+ //example to link event with a directive (not a good method)
 confApp.directive('trigger', function($rootScope) {
 
 	function link($rootScope , tElement, attr) {
 		var scope=angular.element(tElement).scope();
-		scope.fireEventt = function(eventId,msg) {
+		scope.fireEvent = function(eventId,msg) {
 			console.log('firing: ' + msg);
 			$rootScope.$broadcast(eventId, msg);
 		};
@@ -192,16 +109,10 @@ confApp.directive('trigger', function($rootScope) {
         link:link
 		};
 });
-
-	
+**/
+/**
+//example how to link listener with directives
 confApp.directive('listener', function($rootScope) {
-
-	/*function link($rootScope) {
-		alert("ok");
-		  $rootScope.$on('test', function(event, msg) {
-                console.log('received: ' + msg);
-            });
-	  };*/
 	 return {
         link: function($rootScope , element, attr) {
             $rootScope.$on('test', function(event, msg) {
@@ -210,64 +121,82 @@ confApp.directive('listener', function($rootScope) {
         }
 	  };
 });
+**/
 
-function myCtrl($scope, $rootScope, $timeout) {
-    
-    // This one doesn't get picked up by the service as it's link hasn't run by the time this controller runs
-    $scope.fireEvent('sync');
-    // You can stick it in a timeout instead
-    $timeout(function() { $scope.fireEvent('async'); });
-    console.log('finished controller');
-}
-
+//demo controller
+//use it to test how to share events between controllers
 confApp.controller('exampleCtrl', ['$scope', 'eventHandler' ,function($scope,eventHandler) {
      $scope.msg = "pas de message";
 	 $scope.test = function(eventId,msg){
 		console.log("scope2" + eventId + " " + msg);
 		$scope.msg = msg;
 	};
-	eventHandler.linkEvent("test",$scope.test);
+	eventHandler.linkEvent(SELECT,$scope.test);
  }]);
- 
-confApp.controller('confCtrl', ['$scope', '$http', '$location', '$anchorScroll','eventHandler' ,function($scope, $http,$location,$anchorScroll,eventHandler) {
 
-  $scope.filters = {"languages":"lang","salles":"salle"};
-  $scope.selectedConf = 0;
-  $scope.savedConf = new Array();
+//Conference list controller
+confApp.controller('confCtrl', ['$scope', '$http', '$location', '$anchorScroll','eventHandler' ,function($scope, $http,$location,$anchorScroll,eventHandler) {
+	
+	//defined scope filters (automatically computed from conf (see http import) JSON)
+	$scope.filters = {"languages":"lang","salles":"salle"};
+	
+	//current selected conf
+	$scope.selectedConf = 0;
+	
+	//current saved conf
+	$scope.savedConf = new Array();
   
-  $scope.select = function(eventId,msg){
-  console.log("select fn");
-		$location.hash(msg);
-		$scope.selectedConf = ($scope.selectedConf == msg)? 0 : msg;
-		$anchorScroll();
-  };
   
-  $scope.save = function(eventId,msg){
-  console.log("save fn");
-		$location.hash(msg);
-		
-		if(typeof $scope.savedConf[msg] == 'undefined')
-			$scope.savedConf[msg] = msg;
-		else
-			unset($scope.savedConf,msg);
-		//$scope.savedConf[msg] = (typeof $scope.savedConf[msg] != 'undefined') ? !$scope.savedConf[msg] : 1;
-		$anchorScroll();
-  };
+	/**
+		select conference action : when a user want to select a conf to see it 
+		=> scroll to conf and add green border
+	**/
+	$scope.select = function(eventId,msg){
+	  console.log("select fn");
+			$location.hash(msg);
+			$scope.selectedConf = ($scope.selectedConf == msg)? 0 : msg;
+			$anchorScroll();
+	 };
   
-  $scope.test = function(){$scope.save('save','1076');console.log($scope.savedConf);};
   
-  eventHandler.linkEvent("select",$scope.select);
-  eventHandler.linkEvent("save",$scope.save);
-  eventHandler.linkEvent("save",$scope.test);
-  $scope.fireSelectEvent = function(eId){
-		eventHandler.fireEvent("select",eId);
+	/**
+		Save conference action : when a user want to save a conf to print/export it in a further time
+		=> record conf id in savedConf tab
+		=> change conf background of saved conf
+	**/
+	$scope.save = function(eventId,msg){
+	  console.log("save fn");
+			$location.hash(msg);
+			
+			if(typeof $scope.savedConf[msg] == 'undefined')
+				$scope.savedConf[msg] = msg;
+			else
+				unset($scope.savedConf,msg);
+			//$scope.savedConf[msg] = (typeof $scope.savedConf[msg] != 'undefined') ? !$scope.savedConf[msg] : 1;
+			$anchorScroll();
+	  };
+  
+	//exemple test function to add multiple function to same event
+	$scope.test = function(){
+			$scope.save('save','1076');console.log($scope.savedConf);
+	};
+  
+  
+	//Examples : link event from eventHandlerservice to local scope functions
+	eventHandler.linkEvent(SELECT,$scope.select);
+	eventHandler.linkEvent(SAVE,$scope.save);
+	eventHandler.linkEvent(SAVE,$scope.test);
+  
+	//send select event use eventHandler service
+	$scope.fireSelectEvent = function(eId){
+		eventHandler.fireEvent(SELECT,eId);
 	};
 	
+	//save event use eventHandler service
 	$scope.fireSaveEvent = function(eId){
-		eventHandler.fireEvent("save",eId);
+		eventHandler.fireEvent(SAVE,eId);
 	};
-  /**$scope.salles = [];
-  $scope.languages = [];**/
+
   
   //recuperation fichier JSON et traitement pour construire les listes de filtres (salles, langue, etc.)
   $http.get('jsonconfs.json').success(function(data) {
@@ -277,52 +206,32 @@ confApp.controller('confCtrl', ['$scope', '$http', '$location', '$anchorScroll',
 		$scope[filtername] = [];
 	}
 	
+	//automatically construct filters from Afup conference Json
 	angular.forEach($scope.confs, function(conf, key){
-	
 		for(var filtername in $scope.filters){
 			conf_attr_name = $scope.filters[filtername];
 			if (!inArray(conf[conf_attr_name],$scope[filtername])) {
 				$scope[filtername].push(conf[conf_attr_name]);
 		   }
 		} 
-		   
-		   /**if(!inArray(conf.lang,$scope.languages)){
-		   }**/
 	  });
 		
 		
   });
-  
-  $scope.bgColor = "grey";
-  $scope.count = 0;
-  
-  $scope.changeBackground = function(color) {
-      $scope.bgColor = color;
-    }
-	
+
+
+  //calculate duration between 2 dates	
   $scope.getDuree = function(date1,date2) {
 	var d1 = new Date(date1);
 	var d2 = new Date(date2);
 	return moment.duration(d1.getTime()-d2.getTime()).asMinutes();
   }
+
   
-  $scope.changed = function(value,element) {
-	console.log(element + "=" + value);
-  }
-  
+  //get date obj from  string
   $scope.getDate = function(strDate) {
 	return getDate(strDate);
   }
-	/**
-  $scope.getId = function(strLink) {
-		return strLink.split("#")[1];
-    //return getId(strLink); 
-  }**/
-  
-	$scope.affiche = function($event) {
-      console.log("id element :" + $event.target.id);
-    }
-	
 
 }]);
 
