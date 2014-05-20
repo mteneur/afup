@@ -1,6 +1,14 @@
-/** constants **/
+/**
+TODO: essayer de redre l'utilisation du calendrier dans le controlleur générique et spécifier via des modules/configs externes que l'on peut
+facilement plugger/deplugger (voir si on peut faire de l'ijection par exemple)
+
+**/
+
+/** constants (for event handler) **/
 var SELECT = "conf_select";
 var SAVE = "conf_save";
+
+
 
 /** 
 eventHandler service
@@ -24,7 +32,11 @@ planningPHPTourApp.service('eventHandler', function($rootScope) {
 		};
 
 });
+/**
+**/
 
+
+/** controller**/
 planningPHPTourApp.controller('planningCtrl', ['$scope','$http', '$location', '$anchorScroll','eventHandler', function($scope, $http,$location,$anchorScroll,eventHandler) {
  	//Titre de la page
  	$scope.title = "PHP Tour 2014 : Sessions";
@@ -43,6 +55,9 @@ planningPHPTourApp.controller('planningCtrl', ['$scope','$http', '$location', '$
 	
 	//current saved conf
 	$scope.savedConf = new Array();
+	
+	//filtre de recherche
+	$scope.search = new Array();
 	
 	//Chargement des conférences
   	$http.get('data/data.json').success(function(data) {
@@ -65,6 +80,9 @@ planningPHPTourApp.controller('planningCtrl', ['$scope','$http', '$location', '$
 		});
 	});
 
+	/*** TOOLS 
+	(a voir si on les garde dans le controlleur ou si on les sort) 
+	***/
     $scope.buildAfupUrl = function(id, type) {
         var base = 'http://afup.org/pages/phptourlyon2014/conferenciers.php#'
         var suffixe = '';
@@ -84,7 +102,9 @@ planningPHPTourApp.controller('planningCtrl', ['$scope','$http', '$location', '$
     {
         $scope.moduleState = moduleState;
     };
-	$scope.search = new Array();	
+	
+	
+	//fonction utilisée par le filtre permettant de rechercher dans le titre OU dans le résumé un mot	
 	$scope.byAll = function(conf){
 		var salle = (typeof $scope.search.salle === 'undefined') ? 1 : contains(conf.salle,$scope.search.salle);
 		var lang = (typeof $scope.search.lang === 'undefined') ? 1 : contains(conf.lang,$scope.search.lang);
@@ -92,11 +112,13 @@ planningPHPTourApp.controller('planningCtrl', ['$scope','$http', '$location', '$
 			
 		return  ( salle && lang && free);
 	};
+	/*************************** fin des outils *********************************/
 	
-	/**
-		select conference action : when a user want to select a conf to see it 
-		=> scroll to conf and add green border
-	**/
+	/******************************************************
+	Gestion des évènements et fonctions associées
+	******************************************************/
+	
+	//Fonction permettant sélectionner une conférence (CAD afficher cadre vert + scroller vers la conf)
 	$scope.select = function(eventId,msg){
 	  console.log("select fn");
 			$location.hash(msg);
@@ -105,11 +127,7 @@ planningPHPTourApp.controller('planningCtrl', ['$scope','$http', '$location', '$
 	 };
   
   
-	/**
-		Save conference action : when a user want to save a conf to print/export it in a further time
-		=> record conf id in savedConf tab
-		=> change conf background of saved conf
-	**/
+	//Fonction permettant de sauvegarder dans sa liste de choix une conférence (CAD afficher cadre vert + scroller vers la conf)
 	$scope.save = function(eventId,msg){
 	  console.log("save fn");
 			$location.hash(msg);
@@ -125,40 +143,42 @@ planningPHPTourApp.controller('planningCtrl', ['$scope','$http', '$location', '$
 			
 	  };
 	
+	//Connecte la fonction "select" à l'évènement SELECT
 	eventHandler.linkEvent(SELECT,$scope.select);
-	//send select event use eventHandler service
+	
+	//envoie un évènement de sélection d'une conf via l'event handler
+	//l'id de la conf est utilisé en paramètre
 	$scope.fireSelectEvent = function(eId){
 		eventHandler.fireEvent(SELECT,eId);
 	};
 	
-	//save event use eventHandler service
+	//envoie un évènement pour signaler qu'une conf est sauvegardée
+	//l'id de la conf est utilisé en paramètre
 	$scope.fireSaveEvent = function(eId){
 		eventHandler.fireEvent(SAVE,eId);
 		console.log("event fired");
 		$scope.colorCalendarEvent(eId);
 	};
 	
-	//calendar
-	var calendar = "";
-	$scope.events = new Array();
-	/**$scope.makeEvent= function(session) {
-    	var newEvent = new Object();
-
-    	//var time = session.get('timeSlot').split(' - ');
-    	var eventDateStart = session.date_start;
-    	var eventDateEnd = session.date_end;
-		
-    	newEvent.id = session.id;
-    	newEvent.className = '';
-		newEvent.title = session.name;
-		newEvent.start = eventDateStart.toDate();
-		newEvent.end = eventDateEnd.toDate();
-		newEvent.allDay = false;
-		console.log(newEvent);
-		return newEvent;
-		
-	};**/
+	/************************************* fin gestion des évènements ******************************************************************/
 	
+	
+	
+	
+	
+	
+	/****************************************************
+	calendar management 
+	*******************************************************/
+	
+	//variable globale permettant de conserver l'objet calendar 
+	//(à voir si c'est pertinent de le sauvegarder dans le scope mais du coup risquer de le perdre dans les partials)
+	var calendar = "";
+	
+	//liste des évènements du clendrier 
+	$scope.events = new Array();
+
+	//permet de colorier un évènement du calendrier
 	$scope.colorCalendarEvent = function(idSession) {
 		console.log("hello");
 		var sessionEvent = calendar.fullCalendar( 'clientEvents', idSession)[0];
@@ -169,36 +189,35 @@ planningPHPTourApp.controller('planningCtrl', ['$scope','$http', '$location', '$
 		
 	}
 	
+	//fonction qui construit le calendrier et enregistre dans une variable le résultat
+	//TODO: peut etre la renommer vu qu'elle ne retourne rien ...
+	//TODO : voir si on peut éviter de le construire à chaque appel sur la vue
 	$scope.getCalendar = function() {
 				calendar = $('#calendar');
 				calendar.fullCalendar(getFullCalendarConfiguration());		
 
+				//ne construit qu'une fois la liste des évènements (vu que le calendrier semble être appelé à chaque initialisation de la vue
 				if($scope.events.length < 1)
 					angular.forEach($scope.confs, function (conf) {
 						$scope.events.push(makeEvent(conf));
 					});
 					
 				calendar.fullCalendar('addEventSource', $scope.events ,'stick');
-				/**$('#calendar').fullCalendar({
-					eventClick: function(event, element) {
-						event.title = "CLICKED!";
-						console.log(element);
-						$('#calendar').fullCalendar('updateEvent', event);
-					}
-				});**/
-
 	};
 
-	
+	//fonction permettant d'ajouter un évènement au calendrier
 	$scope.addEvent = function(event){
 		calendar.fullCalendar('renderEvent', makeEvent(event) ,'stick');
 		};
-	
+	/****************************** fin calendar management *******************************/
 
 }]);
+/******************* fin controller *********************************/
 
 
 
+/********************* TOOLS ***************************************/
+//recherche si une occurence se trouve dans un tableau
 function inArray(needle, haystack) {
     var length = haystack.length;
     for(var i = 0; i < length; i++) {
@@ -206,6 +225,8 @@ function inArray(needle, haystack) {
     }
     return false;
 }
+
+//stristr à la PHP
 /**
 function stristr(haystack, needle, bool) {
   //  discuss at: http://phpjs.org/functions/stristr/
@@ -233,10 +254,13 @@ function stristr(haystack, needle, bool) {
   }
 }**/
 
+//permet de savoir si une chaine decaractère contient une autre chaine sans tenir compte de la casse
 function contains(haystack,needle) {
 	return haystack.toLowerCase().indexOf((needle+'').toLowerCase()) > -1;
 }
 
+//configuration du calendar 
+//TODO: l'externaliser dans un fichier de conf ?
 function getFullCalendarConfiguration() {
     	var config = new Object({
 			header: {
@@ -268,7 +292,6 @@ function getFullCalendarConfiguration() {
 			eventClick: function(event, element) {
 						console.log(event.id);
 						var rootScope = angular.element('html').scope();
-						//$('#calendar').fullCalendar('updateEvent', event);
 						rootScope.$broadcast(SELECT, event.id);
 					}
 		});
@@ -276,6 +299,7 @@ function getFullCalendarConfiguration() {
 		return config;
 };
 
+//fonction permettant de contruire un évènement à la sauce full calendar
 function makeEvent(session) {
     	var newEvent = new Object();
 
@@ -292,3 +316,5 @@ function makeEvent(session) {
 
 		return newEvent;
 	};
+
+/************************* fin TOOLS ***************************/
