@@ -12,8 +12,8 @@
                 <label class="col-sm-3 control-label" for="searchSalle"> Salles : </label>
                 <div class="col-sm-9">
                     <select id="searchSalle" ng-model="search.salle">
-                        <option ng-repeat="salle in salles">{{salle}}</option>
-                        <option value="">Toutes</option>
+						<option ng-repeat="conf in confs | unique:'salle'">{{conf.salle}}</option>
+						<option value="">Toutes</option>
                     </select>
                 </div>
             </div>
@@ -21,7 +21,7 @@
                 <label class="col-sm-3 control-label" for="searchLang"> Langue : </label>
                 <div class="col-sm-9">
                     <select id="searchLang" ng-model="search.lang">
-                        <option ng-repeat="lang in languages">{{lang}}</option>
+						<option ng-repeat="conf in confs | unique:'lang'">{{conf.lang}}</option>
                         <option value="">Toutes</option>
                     </select>
                 </div>
@@ -32,5 +32,5 @@
 </div>  
 
 <div class="col-md-8 session">
-    <div ng-repeat="conf in confs | filter:byAll | orderBy:conf.date_start" ng-include="'partials/session.html'" ></div>
+    <div ng-repeat="(key_conf,conf) in confs | filter:byAll | orderBy:conf.date_start" ng-include="'partials/session.html'" ></div>
 </div>

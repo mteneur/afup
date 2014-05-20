@@ -3,5 +3,5 @@
 </div>
 <div class="col-md-5 session">
     <button id="btnPrint" type="button" class="btn btn-primary btn-sm print" id="print">Imprimer mon calendrier</button>
-    <div ng-repeat="conf in confs | filter:search | orderBy:conf.date_start" ng-include="'partials/session.html'" ></div>
+    <div ng-repeat="(key_conf,conf) in confs | filter:byAll | orderBy:conf.date_start" ng-include="'partials/session.html'" ></div>
 </div>

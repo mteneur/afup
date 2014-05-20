@@ -2,6 +2,7 @@
 TODO: essayer de redre l'utilisation du calendrier dans le controlleur générique et spécifier via des modules/configs externes que l'on peut
 facilement plugger/deplugger (voir si on peut faire de l'ijection par exemple)
 
+ATTENTION des filtres sont utilisés du répertoire "filtres" , comme 'unique'
 **/
 
 /** constants (for event handler) **/
@@ -36,6 +37,7 @@ planningPHPTourApp.service('eventHandler', function($rootScope) {
 **/
 
 
+
 /** controller**/
 planningPHPTourApp.controller('planningCtrl', ['$scope','$http', '$location', '$anchorScroll','eventHandler', function($scope, $http,$location,$anchorScroll,eventHandler) {
  	//Titre de la page
@@ -47,11 +49,8 @@ planningPHPTourApp.controller('planningCtrl', ['$scope','$http', '$location', '$
     //Vue courante
     $scope.moduleState = 'session';
 
-	//Liste des filtres
-	$scope.filters = {"languages":"lang","salles":"salle"};
-
 	//current selected conf
-	$scope.selectedConf = 0;
+	$scope.selectedConf = -1;
 	
 	//current saved conf
 	$scope.savedConf = new Array();
@@ -62,22 +61,6 @@ planningPHPTourApp.controller('planningCtrl', ['$scope','$http', '$location', '$
 	//Chargement des conférences
   	$http.get('data/data.json').success(function(data) {
   		$scope.confs = data;
-		var conf_attr_name = "";
-
-		//Initialisation des filtres
-		for(var filtername in $scope.filters){
-			$scope[filtername] = [];
-		}
-
-		//Remplissage des filtres
-		angular.forEach($scope.confs, function(conf, key){
-			for(var filtername in $scope.filters){
-				conf_attr_name = $scope.filters[filtername];
-				if (!inArray(conf[conf_attr_name],$scope[filtername])) {
-					$scope[filtername].push(conf[conf_attr_name]);
-				}
-			}
-		});
 	});
 
 	/*** TOOLS 
@@ -129,18 +112,15 @@ planningPHPTourApp.controller('planningCtrl', ['$scope','$http', '$location', '$
   
 	//Fonction permettant de sauvegarder dans sa liste de choix une conférence (CAD afficher cadre vert + scroller vers la conf)
 	$scope.save = function(eventId,msg){
-	  console.log("save fn");
-			$location.hash(msg);
-			
+	  console.log(eventId + " " +msg);
+	  console.log($scope.savedConf);
+						
 			if(typeof $scope.savedConf[msg] == 'undefined')
 				$scope.savedConf[msg] = msg;
 			else
-				unset($scope.savedConf,msg);
-			
-			//$anchorScroll();
-			console.log("save");
-			$scope.colorCalendarEvent(msg);
-			
+				$scope.savedConf = unset($scope.savedConf,msg);
+
+			console.log($scope.savedConf);			
 	  };
 	
 	//Connecte la fonction "select" à l'évènement SELECT
@@ -155,10 +135,36 @@ planningPHPTourApp.controller('planningCtrl', ['$scope','$http', '$location', '$
 	//envoie un évènement pour signaler qu'une conf est sauvegardée
 	//l'id de la conf est utilisé en paramètre
 	$scope.fireSaveEvent = function(eId){
+		var overlap = $scope.checkConfDateRange(eId,true);
+		
+		if(overlap)
+			alert("collision avec " + $scope.confs[overlap].name);
+			
+		$scope.save(SAVE,eId);
 		eventHandler.fireEvent(SAVE,eId);
 		console.log("event fired");
-		$scope.colorCalendarEvent(eId);
+		$scope.saveCalendarEvent(eId);
+		
 	};
+	
+	//vérifie si une conférence chevauche une de celles sélectionnées
+	$scope.checkConfDateRange= function(confIndex,bWantIndex){
+	
+		var overlap = false;
+		var dateStart = $scope.confs[confIndex].date_start
+		var dateEnd = $scope.confs[confIndex].date_end
+		console.log("index :"+confIndex);
+		for (var selectedConfIdex in $scope.savedConf)
+		{console.log(selectedConfIdex +"index :"+confIndex);
+			if(overlap = (selectedConfIdex != confIndex) && checkDatesRangeOverlap(dateStart,dateEnd,$scope.confs[selectedConfIdex].date_start,$scope.confs[selectedConfIdex].date_end))
+				break;
+		}
+		
+		if(bWantIndex && overlap)
+			return selectedConfIdex;
+		else
+			return overlap;
+	}
 	
 	/************************************* fin gestion des évènements ******************************************************************/
 	
@@ -173,41 +179,60 @@ planningPHPTourApp.controller('planningCtrl', ['$scope','$http', '$location', '$
 	
 	//variable globale permettant de conserver l'objet calendar 
 	//(à voir si c'est pertinent de le sauvegarder dans le scope mais du coup risquer de le perdre dans les partials)
-	var calendar = "";
+	$scope.calendar = '';
 	
 	//liste des évènements du clendrier 
 	$scope.events = new Array();
-
+	
+	
+	
 	//permet de colorier un évènement du calendrier
 	$scope.colorCalendarEvent = function(idSession) {
 		console.log("hello");
-		var sessionEvent = calendar.fullCalendar( 'clientEvents', idSession)[0];
-		console.log("calendar_color_changed");
-		sessionEvent.backgroundColor = '#26FF00';
-		//sessionEvent.className = className;
-		calendar.fullCalendar('updateEvent', sessionEvent);
+		if($scope.calendar != '')
+		{
+			var sessionEvent = $scope.calendar.fullCalendar( 'clientEvents', idSession)[0];
+			console.log("calendar_color_changed"+sessionEvent);
+			sessionEvent.backgroundColor = '#26FF00';
+			//sessionEvent.className = className;
+			$scope.calendar.fullCalendar('updateEvent', sessionEvent);
+		}
 		
 	}
 	
+	$scope.saveCalendarEvent = function(eId,msg){
+		if($scope.calendar != '')
+		{
+			var sessionEvent = $scope.calendar.fullCalendar( 'clientEvents', eId)[0];
+			//console.log("saveCalendarEvent" + sessionEvent);
+			//console.log($scope.savedConf);
+			sessionEvent.saved = (typeof $scope.savedConf[eId] != 'undefined');
+			sessionEvent.backgroundColor = sessionEvent.saved ? '#26FF00':'';
+			$scope.calendar.fullCalendar('updateEvent', sessionEvent);
+		}
+	}
+	
+	//eventHandler.linkEvent(SAVE,$scope.saveCalendarEvent);
 	//fonction qui construit le calendrier et enregistre dans une variable le résultat
 	//TODO: peut etre la renommer vu qu'elle ne retourne rien ...
 	//TODO : voir si on peut éviter de le construire à chaque appel sur la vue
 	$scope.getCalendar = function() {
-				calendar = $('#calendar');
-				calendar.fullCalendar(getFullCalendarConfiguration());		
-
+				$scope.calendar = $('#calendar');
+				$scope.calendar.fullCalendar(getFullCalendarConfiguration());		
+			
 				//ne construit qu'une fois la liste des évènements (vu que le calendrier semble être appelé à chaque initialisation de la vue
 				if($scope.events.length < 1)
-					angular.forEach($scope.confs, function (conf) {
-						$scope.events.push(makeEvent(conf));
+					angular.forEach($scope.confs, function (conf,id) {
+						$scope.events.push(makeEvent(conf,id,$scope.savedConf));
 					});
 					
-				calendar.fullCalendar('addEventSource', $scope.events ,'stick');
+				$scope.calendar.fullCalendar('addEventSource', $scope.events ,'stick');
+			
 	};
 
 	//fonction permettant d'ajouter un évènement au calendrier
 	$scope.addEvent = function(event){
-		calendar.fullCalendar('renderEvent', makeEvent(event) ,'stick');
+		$scope.calendar.fullCalendar('renderEvent', makeEvent(event) ,'stick');
 		};
 	/****************************** fin calendar management *******************************/
 
@@ -300,21 +325,38 @@ function getFullCalendarConfiguration() {
 };
 
 //fonction permettant de contruire un évènement à la sauce full calendar
-function makeEvent(session) {
+function makeEvent(session,id,selected) {
     	var newEvent = new Object();
 
     	//var time = session.get('timeSlot').split(' - ');
     	var eventDateStart = session.date_start;
     	var eventDateEnd = session.date_end;
-		
-    	newEvent.id = session.id;
+
+    	newEvent.id = id;
     	newEvent.className = '';
 		newEvent.title = session.name;
 		newEvent.start = new Date(eventDateStart);
 		newEvent.end = new Date(eventDateEnd);
 		newEvent.allDay = false;
+		
+		if(selected[id]) 
+			newEvent.backgroundColor = '#26FF00';
 
 		return newEvent;
 	};
 
+//vérifie si une durée chevauche une autre
+function checkDatesRangeOverlap(startA,endA,startB,endB) {
+	return (new Date(startA).getTime() <= new Date(endB).getTime())  &&  (new Date(endA).getTime() >= new Date(startB).getTime());
+}
+
+//supprime une donnée d'un tableau
+function unset(array, valueOrIndex){
+    var output=[];
+    for(var i in array){
+        if (i!=valueOrIndex)
+            output[i]=array[i];
+    }
+    return output;
+}
 /************************* fin TOOLS ***************************/
