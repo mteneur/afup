@@ -68,13 +68,19 @@ body {
 }
 .selected{
 border : solid;
-border-color:#98bf21;
+border-width:10px;
+border-color:orange;
 }
 
 .saved{
 background-color:#A9F5A9 !important;
 border-color:#98bf21;
 }
+
+.savedEvent{
+background-color:#33CC66 !important;
+}
+
 
 .hide {
 	display:none;
