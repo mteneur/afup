@@ -15,6 +15,8 @@ var SAVE = "conf_save";
 eventHandler service
 used to share event between multiple controllers
 **/
+//permet de sauvegarder les évènements je ne comprends pas pourquoi il en créé plein au lancement du template
+var linkedEvents = new Array();
 planningPHPTourApp.service('eventHandler', function($rootScope) {
 
 		var mapFnEvent = new Array();
@@ -25,11 +27,18 @@ planningPHPTourApp.service('eventHandler', function($rootScope) {
 		
 		
 		this.linkEvent = function(eventId,fn) {
-			$rootScope.$on(eventId, function(event, msg) {
-					if(typeof(fn) === "function")
-						fn(eventId, msg);
-					console.log('received: ' + eventId + " msg:" +msg);
-            });
+			
+			if(!inArray(encodeURIComponent(fn.toString()),linkedEvents))
+			{
+				//sécurité pour avoir une string unique par fonction
+				//TODO: fait à la va vite, à utiliser si pas le choix mais clairement pas optimisé
+				linkedEvents.push(encodeURIComponent(fn.toString()));
+				$rootScope.$on(eventId, function(event, msg) {
+						if(typeof(fn) === "function")
+							fn(eventId, msg);
+						console.log('received: ' + eventId + " msg:" +msg);
+				});
+			}
 		};
 
 });
@@ -227,15 +236,13 @@ planningPHPTourApp.controller('planningCtrl', ['$scope','$rootScope','$http', '$
 		}
 	}
 	
-	//on lie la fonction de sauvegarde à l'évènement
-	//TODO : il y a un problème, lorsqu'un évènement est émis la fonction est appellée plusieurs fois (sans raison)
-	eventHandler.linkEvent(SAVE,$scope.saveCalendarEvent);
+	
 	
 	//fonction qui construit le calendrier et enregistre dans une variable le résultat
 	//TODO: peut etre la renommer vu qu'elle ne retourne rien ...
 	//TODO : voir si on peut éviter de le construire à chaque appel sur la vue
 	$scope.getCalendar = function() {
-	console.log("getCalendar");
+				console.log("getCalendar");
 				$scope.calendar = $('#calendar');
 				calendarObj = $scope.calendar;
 				$scope.calendar.fullCalendar(getFullCalendarConfiguration());
@@ -250,6 +257,11 @@ planningPHPTourApp.controller('planningCtrl', ['$scope','$rootScope','$http', '$
 					$scope.updateColors();
 				}	
 				$scope.calendar.fullCalendar('addEventSource', $scope.events ,'stick');
+				
+				//on lie la fonction de sauvegarde à l'évènement
+				//TODO : mis ici car le template est chargé plusieurs fois et du coup on créé plusieurs liens.
+				//une sécurité a été ajoutée dans le handler mais elle est pas super.
+				eventHandler.linkEvent(SAVE,$scope.saveCalendarEvent);
 	};
 	
 	//met à jour les couleurs du calendrier
@@ -389,5 +401,12 @@ function unset(array, valueOrIndex){
             output[i]=array[i];
     }
     return output;
+}
+
+function functionName(fun) {
+  var ret = fun.toString();
+  ret = ret.substr('function '.length);
+  ret = ret.substr(0, ret.indexOf('('));
+  return ret;
 }
 /************************* fin TOOLS ***************************/
