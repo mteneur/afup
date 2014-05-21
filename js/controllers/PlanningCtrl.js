@@ -36,10 +36,16 @@ planningPHPTourApp.service('eventHandler', function($rootScope) {
 /**
 **/
 
-
+//utilisation de variables globales car les templates "partial" rechargent le controlleur et les données scope sont réinitialisées
+//les variables globales permettent de sauvegarder l'état des données
+//TODO: on doit mal s'y prendre mais j'ai pas trouver d'autres solutions
+var aSavedConf = new Array();
+var calendarEvents = new Array();
+var jsonConfsData = '';
+var calendarObj = '';
 
 /** controller**/
-planningPHPTourApp.controller('planningCtrl', ['$scope','$http', '$location', '$anchorScroll','eventHandler', function($scope, $http,$location,$anchorScroll,eventHandler) {
+planningPHPTourApp.controller('planningCtrl', ['$scope','$rootScope','$http', '$location', '$anchorScroll','eventHandler', function($scope, $rootScope, $http,$location,$anchorScroll,eventHandler) {
  	//Titre de la page
  	$scope.title = "PHP Tour 2014 : Sessions";
 
@@ -50,18 +56,24 @@ planningPHPTourApp.controller('planningCtrl', ['$scope','$http', '$location', '$
     $scope.moduleState = 'session';
 
 	//current selected conf
-	$scope.selectedConf = -1;
+	$rootScope.selectedConf = -1;
 	
 	//current saved conf
-	$scope.savedConf = new Array();
+	$rootScope.savedConf = aSavedConf;
 	
 	//filtre de recherche
 	$scope.search = new Array();
 	
-	//Chargement des conférences
-  	$http.get('data/data.json').success(function(data) {
-  		$scope.confs = data;
-	});
+	//Permet de retrouver les données json à chaque rechargement du controlleur sans re-parser le tout
+	$scope.confs = jsonConfsData;
+	
+	//Chargement des conférences si elles ne l'ont pas été déjà
+	if($scope.confs == '')
+		$http.get('data/data.json').success(function(data) {
+			$scope.confs = data;
+			console.log("ini");
+			jsonConfsData = $scope.confs;
+		});
 
 	/*** TOOLS 
 	(a voir si on les garde dans le controlleur ou si on les sort) 
@@ -81,6 +93,7 @@ planningPHPTourApp.controller('planningCtrl', ['$scope','$http', '$location', '$
         }
     };
 
+	//change l'état du menu
     $scope.changeModuleState = function(moduleState)
     {
         $scope.moduleState = moduleState;
@@ -105,22 +118,24 @@ planningPHPTourApp.controller('planningCtrl', ['$scope','$http', '$location', '$
 	$scope.select = function(eventId,msg){
 	  console.log("select fn");
 			$location.hash(msg);
-			$scope.selectedConf = ($scope.selectedConf == msg)? 0 : msg;
+			$rootScope.selectedConf = ($rootScope.selectedConf == msg)? 0 : msg;
 			$anchorScroll();
 	 };
   
   
-	//Fonction permettant de sauvegarder dans sa liste de choix une conférence (CAD afficher cadre vert + scroller vers la conf)
+	//Fonction permettant de sauvegarder/supprimer dans sa liste de choix une conférence (CAD afficher cadre vert + scroller vers la conf)
 	$scope.save = function(eventId,msg){
 	  console.log(eventId + " " +msg);
-	  console.log($scope.savedConf);
-						
-			if(typeof $scope.savedConf[msg] == 'undefined')
-				$scope.savedConf[msg] = msg;
+	 
+			//si la conf n'était pas sauvegardée on la sauvegarde sinon on l'enlève de la liste
+			if(typeof $rootScope.savedConf[msg] == 'undefined')
+				$rootScope.savedConf[msg] = msg;
 			else
-				$scope.savedConf = unset($scope.savedConf,msg);
+				$rootScope.savedConf = unset($rootScope.savedConf,msg);
 
-			console.log($scope.savedConf);			
+			aSavedConf = $rootScope.savedConf;
+			console.log(aSavedConf);
+			 console.log($rootScope.savedConf);
 	  };
 	
 	//Connecte la fonction "select" à l'évènement SELECT
@@ -142,9 +157,7 @@ planningPHPTourApp.controller('planningCtrl', ['$scope','$http', '$location', '$
 			
 		$scope.save(SAVE,eId);
 		eventHandler.fireEvent(SAVE,eId);
-		console.log("event fired");
-		$scope.saveCalendarEvent(eId);
-		
+		console.log("event fired");		
 	};
 	
 	//vérifie si une conférence chevauche une de celles sélectionnées
@@ -154,7 +167,7 @@ planningPHPTourApp.controller('planningCtrl', ['$scope','$http', '$location', '$
 		var dateStart = $scope.confs[confIndex].date_start
 		var dateEnd = $scope.confs[confIndex].date_end
 		console.log("index :"+confIndex);
-		for (var selectedConfIdex in $scope.savedConf)
+		for (var selectedConfIdex in $rootScope.savedConf)
 		{console.log(selectedConfIdex +"index :"+confIndex);
 			if(overlap = (selectedConfIdex != confIndex) && checkDatesRangeOverlap(dateStart,dateEnd,$scope.confs[selectedConfIdex].date_start,$scope.confs[selectedConfIdex].date_end))
 				break;
@@ -179,12 +192,12 @@ planningPHPTourApp.controller('planningCtrl', ['$scope','$http', '$location', '$
 	
 	//variable globale permettant de conserver l'objet calendar 
 	//(à voir si c'est pertinent de le sauvegarder dans le scope mais du coup risquer de le perdre dans les partials)
-	$scope.calendar = '';
+	$scope.calendar = calendarObj;
 	
-	//liste des évènements du clendrier 
-	$scope.events = new Array();
-	
-	
+	//liste des évènements du calendrier
+	//Evite d'avoir à les récupérer à chaque calcul sur le calendrier
+	//le tableau des évènements a les mêmes ids que les conférences afin de faciliter la correspondance
+	$scope.events = calendarEvents;
 	
 	//permet de colorier un évènement du calendrier
 	$scope.colorCalendarEvent = function(idSession) {
@@ -200,35 +213,56 @@ planningPHPTourApp.controller('planningCtrl', ['$scope','$http', '$location', '$
 		
 	}
 	
+	//fonction permettant de signaler qu'une conf a été sauvegardée
 	$scope.saveCalendarEvent = function(eId,msg){
+		console.log($rootScope.savedConf);
 		if($scope.calendar != '')
 		{
-			var sessionEvent = $scope.calendar.fullCalendar( 'clientEvents', eId)[0];
+			var sessionEvent = $scope.events[msg];
 			//console.log("saveCalendarEvent" + sessionEvent);
-			//console.log($scope.savedConf);
-			sessionEvent.saved = (typeof $scope.savedConf[eId] != 'undefined');
-			sessionEvent.backgroundColor = sessionEvent.saved ? '#26FF00':'';
+			
+			sessionEvent.saved = (typeof $rootScope.savedConf[msg] != 'undefined'); //permet d'avoir l'état d'un évènement , s'il était déjà sauvegardé on le désélectionne (== plus dans la liste)
+			sessionEvent.backgroundColor = sessionEvent.saved ? '#26FF00':''; // selon l'état de l'évènement on applique la couleur
 			$scope.calendar.fullCalendar('updateEvent', sessionEvent);
 		}
 	}
 	
-	//eventHandler.linkEvent(SAVE,$scope.saveCalendarEvent);
+	//on lie la fonction de sauvegarde à l'évènement
+	//TODO : il y a un problème, lorsqu'un évènement est émis la fonction est appellée plusieurs fois (sans raison)
+	eventHandler.linkEvent(SAVE,$scope.saveCalendarEvent);
+	
 	//fonction qui construit le calendrier et enregistre dans une variable le résultat
 	//TODO: peut etre la renommer vu qu'elle ne retourne rien ...
 	//TODO : voir si on peut éviter de le construire à chaque appel sur la vue
 	$scope.getCalendar = function() {
+	console.log("getCalendar");
 				$scope.calendar = $('#calendar');
-				$scope.calendar.fullCalendar(getFullCalendarConfiguration());		
-			
+				calendarObj = $scope.calendar;
+				$scope.calendar.fullCalendar(getFullCalendarConfiguration());
 				//ne construit qu'une fois la liste des évènements (vu que le calendrier semble être appelé à chaque initialisation de la vue
+				
 				if($scope.events.length < 1)
+				{
 					angular.forEach($scope.confs, function (conf,id) {
-						$scope.events.push(makeEvent(conf,id,$scope.savedConf));
+						$scope.events[id] = makeEvent(conf,id);
 					});
-					
+					calendarEvents = $scope.events;
+					$scope.updateColors();
+				}	
 				$scope.calendar.fullCalendar('addEventSource', $scope.events ,'stick');
-			
 	};
+	
+	//met à jour les couleurs du calendrier
+	//Utilisé lors du chargement du calendrier qui doit colorer les évènements sélectionnés dans une autre page
+	$scope.updateColors = function() {	
+		//on parcourt les conférences sauvegardées
+		for (var selectedConfIdex in $rootScope.savedConf)
+		{
+			//les évènements ont le meme id que les confs ce qui permet de retrouver l'évènement calendrier facilement
+			$scope.events[selectedConfIdex].backgroundColor = '#26FF00'; // on applique la couleur à l'évènement sélectionné
+			$scope.calendar.fullCalendar('updateEvent', $scope.events[selectedConfIdex]); //MAJ du calendrier
+		}
+	}
 
 	//fonction permettant d'ajouter un évènement au calendrier
 	$scope.addEvent = function(event){
@@ -325,7 +359,7 @@ function getFullCalendarConfiguration() {
 };
 
 //fonction permettant de contruire un évènement à la sauce full calendar
-function makeEvent(session,id,selected) {
+function makeEvent(session,id) {
     	var newEvent = new Object();
 
     	//var time = session.get('timeSlot').split(' - ');
@@ -338,9 +372,6 @@ function makeEvent(session,id,selected) {
 		newEvent.start = new Date(eventDateStart);
 		newEvent.end = new Date(eventDateEnd);
 		newEvent.allDay = false;
-		
-		if(selected[id]) 
-			newEvent.backgroundColor = '#26FF00';
 
 		return newEvent;
 	};

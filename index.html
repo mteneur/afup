@@ -53,7 +53,7 @@
                 <div class="row" ng-include="'partials/viewSession.html'"></div>
             </div>
             <div ng-switch-when="calendar">
-                <div class="row" ng-include="'partials/viewCalendar.html'"></div>
+                <div class="row" ng-include="'partials/viewCalendar.html'" onload="getCalendar()"></div>
             </div>
             <div ng-switch-when="split">
                 <div class="row" ng-include="'partials/viewSplit.html'"></div>
