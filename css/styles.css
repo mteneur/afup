@@ -63,4 +63,23 @@ body {
     padding: 19px;
 }
 
+.highlightedText {
+    background: yellow;
+}
+.selected{
+border : solid;
+border-color:#98bf21;
+}
 
+.saved{
+background-color:#A9F5A9 !important;
+border-color:#98bf21;
+}
+
+.hide {
+	display:none;
+}
+
+.red {
+background-color:red !important;
+}

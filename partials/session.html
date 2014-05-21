@@ -1,7 +1,7 @@
-<div class="col-sm-12">
+<div id="{{key_conf}}" class="col-sm-12" >
     <h4>{{conf.name}}</h4>
 </div>
-<div class="col-sm-12">
+<div  class="col-sm-12"  ng-class="{selected:(selectedConf==key_conf),saved: isSaved = (key_conf == savedConf[key_conf])}">
     <div class="col-xs-12 col-sm-9">
         <p>{{conf.date}}</p>
         <p>
@@ -14,12 +14,16 @@
     </div>
 <div class="col-xs-12 col-sm-3 text-center">
       <div ng-repeat="conferencier in conf.conferenciers" class="conferencier">
-        <a href="{{buildAfupUrl(conferencier.id, 'link')}}">
-            <p><img src="{{buildAfupUrl(conferencier.id, 'img')}}" alt="" class="img-thumbnail img-responsive"/></p>
+        <a href="{{conferencier.link}}">
+            <p><img src="{{conferencier.img}}" alt="" class="img-thumbnail img-responsive"/></p>
             <p>{{conferencier.name}}</p>
         </a>
     </div>
 </div>
 <div class="col-sm-12 text-center">
-  <button id="btnParticipate" type="button" class="btn btn-primary btn-sm addEvent" session="{{conf.id}}">Je participe !</button>
+  <button id="btnParticipate" type="button" ng-class="{'btn-primary':!isSaved,'btn-danger':isSaved}"  class="btn btn-sm addEvent" session="{{conf.id}}" ng-click="fireSaveEvent(key_conf)">
+	<span ng-class="{hide:isSaved}"> Je participe ! </span>
+	<span ng-class="{hide:!isSaved}">Je ne participe plus</span> 
+  </button>
+</div>
 </div>
