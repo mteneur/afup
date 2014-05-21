@@ -37,6 +37,10 @@ planningPHPTourApp.service('eventHandler', function($rootScope) {
 						if(typeof(fn) === "function")
 							fn(eventId, msg);
 						console.log('received: ' + eventId + " msg:" +msg);
+						
+						//permet de recharger les templates lorsque le rootscope est modifié (pas trouvé mieux)
+						//TODO: clairement pas propre mais je n'ai pas trouvé mieux
+						$rootScope.$digest();
 				});
 			}
 		};
@@ -52,6 +56,7 @@ var aSavedConf = new Array();
 var calendarEvents = new Array();
 var jsonConfsData = '';
 var calendarObj = '';
+var selectedConf = -1;
 
 /** controller**/
 planningPHPTourApp.controller('planningCtrl', ['$scope','$rootScope','$http', '$location', '$anchorScroll','eventHandler', function($scope, $rootScope, $http,$location,$anchorScroll,eventHandler) {
@@ -65,7 +70,7 @@ planningPHPTourApp.controller('planningCtrl', ['$scope','$rootScope','$http', '$
     $scope.moduleState = 'session';
 
 	//current selected conf
-	$rootScope.selectedConf = -1;
+	$rootScope.selectedConf = selectedConf;
 	
 	//current saved conf
 	$rootScope.savedConf = aSavedConf;
@@ -126,9 +131,15 @@ planningPHPTourApp.controller('planningCtrl', ['$scope','$rootScope','$http', '$
 	//Fonction permettant sélectionner une conférence (CAD afficher cadre vert + scroller vers la conf)
 	$scope.select = function(eventId,msg){
 	  console.log("select fn");
-			$location.hash(msg);
-			$rootScope.selectedConf = ($rootScope.selectedConf == msg)? 0 : msg;
-			$anchorScroll();
+			$rootScope.selectedConf = ($rootScope.selectedConf == msg)? -1 : msg;
+			selectedConf = $rootScope.selectedConf;
+			
+			//si sélectionné alors on scroll
+			if($rootScope.selectedConf != -1)
+			{
+				$location.hash(msg);
+				$anchorScroll();
+			}
 	 };
   
   
@@ -215,7 +226,7 @@ planningPHPTourApp.controller('planningCtrl', ['$scope','$rootScope','$http', '$
 		{
 			var sessionEvent = $scope.calendar.fullCalendar( 'clientEvents', idSession)[0];
 			console.log("calendar_color_changed"+sessionEvent);
-			sessionEvent.backgroundColor = '#26FF00';
+			sessionEvent.className = 'savedEvent';
 			//sessionEvent.className = className;
 			$scope.calendar.fullCalendar('updateEvent', sessionEvent);
 		}
@@ -231,12 +242,20 @@ planningPHPTourApp.controller('planningCtrl', ['$scope','$rootScope','$http', '$
 			//console.log("saveCalendarEvent" + sessionEvent);
 			
 			sessionEvent.saved = (typeof $rootScope.savedConf[msg] != 'undefined'); //permet d'avoir l'état d'un évènement , s'il était déjà sauvegardé on le désélectionne (== plus dans la liste)
-			sessionEvent.backgroundColor = sessionEvent.saved ? '#26FF00':''; // selon l'état de l'évènement on applique la couleur
+			sessionEvent.className = sessionEvent.saved ? 'savedEvent':''; // selon l'état de l'évènement on applique la couleur
 			$scope.calendar.fullCalendar('updateEvent', sessionEvent);
 		}
 	}
-	
-	
+	 
+	 //function qui réagit quand une conférence est sélectionnée et change le bord de l'évènement correspondant dans le calendrier
+	$scope.selectCalendarEvent = function(eId,msg){
+		if($rootScope.selectedConf == msg){
+			$scope.events[msg].className = 'selected';//utilise des classes CSS
+		}else{
+			$scope.events[msg].className = '';
+		}
+			$scope.calendar.fullCalendar('updateEvent', $scope.events[msg]);
+	}
 	
 	//fonction qui construit le calendrier et enregistre dans une variable le résultat
 	//TODO: peut etre la renommer vu qu'elle ne retourne rien ...
@@ -262,6 +281,9 @@ planningPHPTourApp.controller('planningCtrl', ['$scope','$rootScope','$http', '$
 				//TODO : mis ici car le template est chargé plusieurs fois et du coup on créé plusieurs liens.
 				//une sécurité a été ajoutée dans le handler mais elle est pas super.
 				eventHandler.linkEvent(SAVE,$scope.saveCalendarEvent);
+				
+				//idem avec la sélection
+				eventHandler.linkEvent(SELECT,$scope.selectCalendarEvent);
 	};
 	
 	//met à jour les couleurs du calendrier
@@ -403,6 +425,7 @@ function unset(array, valueOrIndex){
     return output;
 }
 
+//récupère le nom d'une fonction
 function functionName(fun) {
   var ret = fun.toString();
   ret = ret.substr('function '.length);
