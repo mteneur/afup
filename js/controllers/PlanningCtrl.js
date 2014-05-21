@@ -211,24 +211,39 @@ planningPHPTourApp.controller('planningCtrl', ['$scope','$http', '$location', '$
 			$scope.calendar.fullCalendar('updateEvent', sessionEvent);
 		}
 	}
-	
 	//eventHandler.linkEvent(SAVE,$scope.saveCalendarEvent);
 	//fonction qui construit le calendrier et enregistre dans une variable le résultat
 	//TODO: peut etre la renommer vu qu'elle ne retourne rien ...
 	//TODO : voir si on peut éviter de le construire à chaque appel sur la vue
 	$scope.getCalendar = function() {
 				$scope.calendar = $('#calendar');
-				$scope.calendar.fullCalendar(getFullCalendarConfiguration());		
-			
+						
+				$scope.calendar.fullCalendar(getFullCalendarConfiguration());
 				//ne construit qu'une fois la liste des évènements (vu que le calendrier semble être appelé à chaque initialisation de la vue
+				
 				if($scope.events.length < 1)
+				{
 					angular.forEach($scope.confs, function (conf,id) {
-						$scope.events.push(makeEvent(conf,id,$scope.savedConf));
+						$scope.events[id] = makeEvent(conf,id);
 					});
 					
+				}
+				$scope.updateColors();	
 				$scope.calendar.fullCalendar('addEventSource', $scope.events ,'stick');
+				
+				
+				
+					
 			
 	};
+	
+	$scope.updateColors = function() {
+		for (var selectedConfIdex in $scope.savedConf)
+		{
+			$scope.events[selectedConfIdex].backgroundColor = '#26FF00';
+		}
+	
+	}
 
 	//fonction permettant d'ajouter un évènement au calendrier
 	$scope.addEvent = function(event){
@@ -325,7 +340,7 @@ function getFullCalendarConfiguration() {
 };
 
 //fonction permettant de contruire un évènement à la sauce full calendar
-function makeEvent(session,id,selected) {
+function makeEvent(session,id) {
     	var newEvent = new Object();
 
     	//var time = session.get('timeSlot').split(' - ');
@@ -338,9 +353,6 @@ function makeEvent(session,id,selected) {
 		newEvent.start = new Date(eventDateStart);
 		newEvent.end = new Date(eventDateEnd);
 		newEvent.allDay = false;
-		
-		if(selected[id]) 
-			newEvent.backgroundColor = '#26FF00';
 
 		return newEvent;
 	};
