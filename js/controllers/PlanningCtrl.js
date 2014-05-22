@@ -69,6 +69,9 @@ planningPHPTourApp.controller('planningCtrl', ['$scope','$rootScope','$http', '$
     //Vue courante
     $scope.moduleState = 'session';
 
+    //Liste des filtres
+	$scope.filters = {"conferenciers":"conferenciers"};
+
 	//current selected conf
 	$rootScope.selectedConf = selectedConf;
 	
@@ -88,6 +91,34 @@ planningPHPTourApp.controller('planningCtrl', ['$scope','$rootScope','$http', '$
 			console.log("ini");
 			jsonConfsData = $scope.confs;
 		});
+
+	//Chargement des conférences
+  	$http.get('data/data.json').success(function(data) {
+  		$scope.confs = data;
+		var conf_attr_name = "";
+
+		//Initialisation des filtres
+		for(var filtername in $scope.filters){
+			$scope[filtername] = [];
+		}
+
+		//Remplissage des filtres
+        angular.forEach($scope.confs, function(conf, key){
+            for(var filtername in $scope.filters){
+                conf_attr_name = $scope.filters[filtername];
+                if (!inArray(conf[conf_attr_name],$scope[filtername])) {
+                    if (conf_attr_name == 'conferenciers') { 
+                        var conferenciers = conf['conferenciers'];
+                        for(var key in conferenciers){ 
+                            $scope[filtername].push(conferenciers[key]); 
+                        }
+                    } else {
+                        $scope[filtername].push(conf[conf_attr_name]);
+                    }
+                }
+            }
+        });
+	});
 
 	/*** TOOLS 
 	(a voir si on les garde dans le controlleur ou si on les sort) 
