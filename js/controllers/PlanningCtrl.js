@@ -8,6 +8,9 @@ planningPHPTourApp.controller('planningCtrl', ['$scope','$http', function($scope
 	//Liste des filtres
 	$scope.filters = {"conferenciers":"conferenciers"};
 
+    //filtre de recherche
+    $scope.search = new Array();
+
     //Conf selectionnées
     $scope.selectedConf = [];
 
@@ -30,6 +33,14 @@ planningPHPTourApp.controller('planningCtrl', ['$scope','$http', function($scope
         });
 	});
 
+    //fonction utilisée par le filtre permettant de rechercher dans le titre OU dans le résumé un mot   
+    $scope.byAll = function(conf){
+        var salle = (typeof $scope.search.salle === 'undefined') ? 1 : contains(conf.salle,$scope.search.salle);
+        var lang = (typeof $scope.search.lang === 'undefined') ? 1 : contains(conf.lang,$scope.search.lang);
+        var free = (typeof $scope.search.query === 'undefined') ? 1 : (contains(conf.detail,$scope.search.query) || contains(conf.name,$scope.search.query));
+        return  ( salle && lang && free);
+    };
+
     $scope.toggleSession = function(conf, $event){
         
         $scope.selectedConf.push(conf);
@@ -41,7 +52,11 @@ planningPHPTourApp.controller('planningCtrl', ['$scope','$http', function($scope
     }
 }]);
 
-
+/**
+ * Toogle du bouton
+ * @param  domObject el    Elément
+ * @param  string    state Etat du bouton
+ */
 function toggleButton(el, state)
 {
     var addClass = 'btn-primary';
@@ -58,4 +73,14 @@ function toggleButton(el, state)
     el.removeClass(removeClass)
     el.addClass(addClass)
     el.html(text);
+}
+
+/**
+ * Permet de savoir si une chaine decaractère contient une autre chaine sans tenir compte de la casse
+ * @param  string haystack  Stack complète
+ * @param  string needle    Chaine à trouver
+ * @return bool             Chaine trouvée
+ */
+function contains(haystack,needle) {
+    return haystack.toLowerCase().indexOf((needle+'').toLowerCase()) > -1;
 }
