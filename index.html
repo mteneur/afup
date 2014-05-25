@@ -40,7 +40,7 @@
                     <div class="form-group">
                         <label class="control-label" for="searchConferencier"> Conferencier : </label>
                         <div>
-                            <select id="searchConferencier" ng-model="search" ng-options="conferencier.name as conferencier.name for conferencier in conferenciers | orderBy:'name' | unique:'name'">
+                            <select id="searchConferencier" ng-model="conferencierSearch" ng-options="conferencier.name as conferencier.name for conferencier in conferenciers | orderBy:'name' | unique:'name'">
                                 <option value="">Tous</option>
                             </select>
                         </div>
@@ -48,7 +48,7 @@
                     <div class="form-group">
                         <label class="control-label" for="searchSalle"> Salles : </label>
                         <div>
-                            <select id="searchSalle" ng-model="search" ng-options="conf.salle as conf.salle for conf in confs | orderBy:'salle' | unique:'salle'">
+                            <select id="searchSalle" ng-model="salleSearch" ng-options="conf.salle as conf.salle for conf in confs | orderBy:'salle' | unique:'salle'">
                                 <option value="">Toutes</option>
                             </select>
                         </div>
@@ -56,7 +56,7 @@
                     <div class="form-group">
                         <label class="control-label" for="searchLang"> Langue : </label>
                         <div>
-                            <select id="searchLang" ng-model="search" ng-options="conf.idLang as conf.lang for conf in confs | orderBy:'lang' | unique:'lang'">
+                            <select id="searchLang" ng-model="langSearch" ng-options="conf.idLang as conf.lang for conf in confs | orderBy:'lang' | unique:'lang'">
                                 <option selected value="">Toutes</option>
                             </select>
                         </div>
@@ -64,7 +64,7 @@
                 </form>
                 <button id="btnPrint" type="button" class="btn btn-primary btn-sm print" id="print">Imprimer mon calendrier</button>
             </div>
-            <div class="well profile" ng-repeat="conf in confs | filter:search | orderBy:conf.date_start" ng-include="'partials/session.html'" ></div>
+            <div class="well profile" ng-repeat="conf in confs | filter:search | filter:salleSearch | filter:langSearch | filter:conferencierSearch |orderBy:conf.date_start" ng-include="'partials/session.html'" ></div>
         </div>
     </div><!-- /.container -->
 
