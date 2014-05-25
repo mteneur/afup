@@ -1,4 +1,4 @@
-planningPHPTourApp.controller('planningCtrl', ['$scope','$http', '$rootScope', 'fullCalendarService',function($scope, $http, $rootScope, fullCalendarService) {
+planningPHPTourApp.controller('planningCtrl', ['$scope','$http', '$rootScope', '$location', '$anchorScroll', 'eventHandler', 'fullCalendarService',function($scope, $http, $rootScope,$location,$anchorScroll,eventHandler,fullCalendarService) {
  	//Titre de la page
  	$scope.title = "PHP Tour 2014 : Sessions";
 
@@ -10,7 +10,10 @@ planningPHPTourApp.controller('planningCtrl', ['$scope','$http', '$rootScope', '
 
     //Conf selectionnées
     $scope.selectedConf = [];
+	
+	$scope.showConf = '';
 
+	
 	//Chargement des conférences
   	$http.get('data/data.json').success(function(data) {
   		$scope.confs = data;
@@ -23,11 +26,14 @@ planningPHPTourApp.controller('planningCtrl', ['$scope','$http', '$rootScope', '
 
 		//Remplissage du filtre conférencier
         angular.forEach($scope.confs, function(conf, key){
+			($scope.confs[key]).idLang = ''+conf.lang + conf.lang;
             var conferenciers = conf['conferenciers'];
             for(var key in conferenciers){
                 $scope['conferenciers'].push(conferenciers[key]);
             }
         });
+		
+		fullCalendarService.init($scope.confs);
 	});
 
     $scope.toggleSession = function(conf, $event){        
@@ -42,14 +48,14 @@ planningPHPTourApp.controller('planningCtrl', ['$scope','$http', '$rootScope', '
 
             delete($scope.selectedConf[conf.id]);
             addClass = '';
-            toggleButton(angular.element($event.target), 'add');
+            //toggleButton(angular.element($event.target), 'add');
         } else {
             if($scope.checkConflict(conf)) {
                 addClass = 'conflictEvent';        
             }
-
+			console.log("click");
             $scope.selectedConf[conf.id] = conf;
-            toggleButton(angular.element($event.target), 'remove');
+           // toggleButton(angular.element($event.target), 'remove');
         }
 
         fullCalendarService.changeClassEvent(conf.id, addClass);
@@ -73,19 +79,27 @@ planningPHPTourApp.controller('planningCtrl', ['$scope','$http', '$rootScope', '
     $scope.top = function() {
         location.hash = "#top";
     }
-
-    //A supprimer
-    $scope.dumpSelectedConf = function(){
-        console.log('selectedConf');
-        angular.forEach($scope.selectedConf, function(conf,key) {
-            console.log(key);
-            console.log(conf);
-        });
-    };
+	
+	//gère l'évènement "selection"
+	//n'intervient pas dans la vue, c est a la vue de définir les actions selon la valeur des données
+	$scope.eventSelected = function(msg) {
+	
+		if($scope.showConf != msg)
+		{
+			$location.hash(msg);
+			$scope.showConf = msg;
+			$anchorScroll();
+		}else
+			$scope.showConf='';
+	
+		$scope.$apply()
+	}
+	eventHandler.linkEvent(eventHandler.SELECT,$scope.eventSelected);
 
 }]);
 
 //A voir si on les intègre au ctrl
+/** pas a faire dans ctrl je pense, le switch ne concerne que la vue en fonction de la variable qui garde les confs sélectionnées
 function toggleButton(el, state)
 {
     var addClass = 'btn-primary';
@@ -102,7 +116,7 @@ function toggleButton(el, state)
     el.removeClass(removeClass)
     el.addClass(addClass)
     el.html(text);
-}
+}**/
 
 function checkDatesRangeOverlap(startA,endA,startB,endB) {
     return (new Date(startA).getTime() <= new Date(endB).getTime()) && (new Date(endA).getTime() >= new Date(startB).getTime());

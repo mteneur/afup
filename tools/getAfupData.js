@@ -48,6 +48,7 @@ var img_pattern = /<img.+?src=[\"'](.+?)[\"'].*?>/;
 casper.then(function() {	
 	sessions = this.getElementsInfo('.session');
 	var i=0;
+
 	all_confs = this.evaluate(function() {
 			var myTab = new Array();
 			var conf  = null;
@@ -72,10 +73,11 @@ casper.then(function() {
 
 			function getDate(dateString,isStart) {
 				var pattern = /(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2}) - (\d{2}):(\d{2})/;
+
 				if(isStart)
-					date = new Date(dateString.replace(pattern,'$3-$2-$1T$4:$5:00'));
+					date = dateString.replace(pattern,'$3-$2-$1 $4:$5:00');
 				else
-					date = new Date(dateString.replace(pattern,'$3-$2-$1T$6:$7:00'));
+					date = dateString.replace(pattern,'$3-$2-$1 $6:$7:00');
 
 				return date;
 			}
@@ -133,6 +135,6 @@ casper.run(function() {
 	var fs = require('fs');
 	jsondata = convert2Json(all_confs);
 	fs.write("../data/data.json", jsondata, 'w');
-	require('utils').dump(all_confs[1]);
+	
 	this.exit();
 });

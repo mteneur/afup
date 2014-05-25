@@ -74,3 +74,23 @@ body {
 .calendarSelect{
     border: 1px solid black;
 }
+
+.selected{
+border : solid;
+border-width:10px;
+border-color:orange;
+}
+
+.saved{
+background-color:#A9F5A9 !important;
+border-color:#98bf21;
+}
+
+.savedEvent{
+background-color:#33CC66 !important;
+}
+
+
+.hide {
+	display:none;
+}

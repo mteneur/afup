@@ -1,8 +1,8 @@
-planningPHPTourApp.directive('fullcalendar', function() {
+planningPHPTourApp.directive('fullcalendar', ['fullCalendarService','eventHandler',function(fullCalendarService,eventHandler) {
     return {
         restrict: 'E',
         template: '<div id="calendar"></div>',
-        scope: { confs: '=confs' },
+        scope: { confs: '=confs' ,selected :'=selected' ,saved_confs : '=saved_confs'},
         link: function (scope, el, attrs) {
             var config = {
                 header: {
@@ -32,9 +32,16 @@ planningPHPTourApp.directive('fullcalendar', function() {
                 dayNamesShort: ['Lun','Mar','Mer','Jeu','Thu','Ven','Sam','Dim'],
                 monthNames : ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'],
                 eventClick: function(event, jsEvent, view) {
-                    location.hash = "#" + event.id;
-                    angular.element(".profile").removeClass('calendarSelect');
-                    angular.element("#" + event.id).parent().addClass('calendarSelect');
+					
+					//modification de la classe de l'évènement via le service calendar
+					fullCalendarService.changeClassEvent(scope.selected,'');
+					if(event.id != scope.selected)
+						fullCalendarService.changeClassEvent(event.id,'calendarSelect');
+						
+					//utilisation des events permet de decoupler le controlleur du fonctionnement de la vue
+					//le controlleur n'a pas a connaitre comment la vue est contruite dans la mesure du possible
+					//c'est a la vue de définir un fonctionnement en fonction des données du controlleur	
+					eventHandler.fireEvent(eventHandler.SELECT,event.id);
                 },
                 eventRender: function(event, element) {
                 },
@@ -43,30 +50,9 @@ planningPHPTourApp.directive('fullcalendar', function() {
                 }
             };
 
-            var makeEvent = function(conf) {
-                var newEvent = new Object();
-                var eventDateStart = conf.date_start;
-                var eventDateEnd = conf.date_end;
-
-                newEvent.id = conf.id;
-                newEvent.className = '';
-                newEvent.title = conf.name;
-                newEvent.start = new Date(eventDateStart);
-                newEvent.end = new Date(eventDateEnd);
-                newEvent.allDay = false;
-
-                return newEvent;
-            };
-
             angular.element('#calendar').fullCalendar(config);
-            
-            var calendarEvents = [];
-            scope.$watch('confs', function(confs) {
-                angular.forEach(confs, function(conf, key) {
-                    calendarEvents.push(makeEvent(conf));
-                }); 
-                angular.element('#calendar').fullCalendar('addEventSource', calendarEvents ,'stick');               
-            });
+
+
         }
     }
-});
+}]);
