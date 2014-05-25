@@ -1,7 +1,7 @@
 	<div id={{conf.id}} class="col-sm-12 scroll-fix">
 		<h4>{{conf.name}} <a ng-click="top()" class="glyphicon glyphicon-arrow-up pull-right"></a></h4>
 	</div>
-	<div class="col-sm-12" ng-class="{selected:(selectedConf==conf.id),saved: isSaved = (selectedConf[conf.id]),calendarSelect:(showConf==conf.id)}">
+	<div class="col-sm-12" ng-class="{selected:(selectedConf==conf.id),conflict:conflictConfs[conf.id],saved: isSaved = (selectedConf[conf.id]),calendarSelect:(showConf==conf.id)}">
 		<div class="col-xs-12 col-sm-9">
 			<p>{{conf.date}}</p>
 			<p>
@@ -27,3 +27,4 @@
 		  </button>
 		</div>
 	</div>
+

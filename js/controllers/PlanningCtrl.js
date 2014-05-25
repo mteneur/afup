@@ -1,6 +1,6 @@
 planningPHPTourApp.controller('planningCtrl', ['$scope','$http', '$rootScope', '$location', '$anchorScroll', 'eventHandler', 'fullCalendarService',function($scope, $http, $rootScope,$location,$anchorScroll,eventHandler,fullCalendarService) {
  	//Titre de la page
- 	$scope.title = "PHP Tour 2014 : Sessions";
+ 	$scope.title = "PHP Tour 2014";
 
     //Titre des vues
     $scope.viewTitle = {"session":"Sessions", "calendar":"Agenda", "split":"Split View"}
@@ -10,6 +10,9 @@ planningPHPTourApp.controller('planningCtrl', ['$scope','$http', '$rootScope', '
 
     //Conf selectionnées
     $scope.selectedConf = [];
+	
+	//Conf en conflit
+    $scope.conflictConfs = [];
 	
 	$scope.showConf = '';
 
@@ -37,29 +40,42 @@ planningPHPTourApp.controller('planningCtrl', ['$scope','$http', '$rootScope', '
 	});
 
     $scope.toggleSession = function(conf, $event){        
-        var addClass = 'savedEvent';
 
+		var addClass = fullCalendarService.SAVED_CLASS;
+		
+		
+		if(conf.id in $scope.conflictConfs)
+			delete($scope.conflictConfs[conf.id]);
+			
         if(conf.id in $scope.selectedConf) {
-            var conflitId = $scope.checkConflict(conf);
-            if (conflitId) {
-                var conflitedConf = $scope.selectedConf[conflitId];
-                fullCalendarService.changeClassEvent(conflitedConf.id, 'savedEvent');
-            }
-
             delete($scope.selectedConf[conf.id]);
-            addClass = '';
+			addClass = '';
             //toggleButton(angular.element($event.target), 'add');
         } else {
             if($scope.checkConflict(conf)) {
-                addClass = 'conflictEvent';        
+                addClass = fullCalendarService.CONFLICT_CLASS; 
+				$scope.conflictConfs[conf.id] = conf;				
             }
-			console.log("click");
+			//console.log("click");
             $scope.selectedConf[conf.id] = conf;
            // toggleButton(angular.element($event.target), 'remove');
         }
 
         fullCalendarService.changeClassEvent(conf.id, addClass);
     };
+
+	//????
+    $scope.highlightSessions = function(filtredConf){
+        var filtred = true;
+        if (filtredConf == null) {
+            filtredConf = $scope.confs;
+            filtred = false;
+        }
+
+        angular.forEach(filtredConf, function(selectedConf, key){
+            fullCalendarService.filtredEvent(selectedConf.id, filtred);
+        });
+    }
 
     $scope.checkConflict = function(newConf){
         var overlap   = false;
@@ -77,7 +93,33 @@ planningPHPTourApp.controller('planningCtrl', ['$scope','$http', '$rootScope', '
     }
 
     $scope.top = function() {
-        location.hash = "#top";
+        location.hash = "#search";
+    }
+
+	//pas sur de l'utilité et ca alourdit
+    $scope.changeView = function() {
+        var session = angular.element('.session');
+        var agenda = angular.element('.agenda');
+        var icon = angular.element('.agenda h2 span');
+
+        var hiddenClass = 'hidden';
+        var fullSizeClass = 'col-md-12';
+        var normalSizeClass = 'col-md-7';
+
+        var leftIcon = 'glyphicon-arrow-left';
+        var rightIcon = 'glyphicon-arrow-right';
+
+        if (session.hasClass(hiddenClass)) {
+            session.removeClass(hiddenClass);
+            agenda.removeClass(fullSizeClass).addClass(normalSizeClass);
+            icon.removeClass(leftIcon).addClass(rightIcon);
+        } else {
+            session.addClass(hiddenClass);
+            agenda.removeClass(normalSizeClass).addClass(fullSizeClass);
+            icon.removeClass(rightIcon).addClass(leftIcon);
+        }
+
+        fullCalendarService.init($scope.confs);
     }
 	
 	//gère l'évènement "selection"
@@ -119,5 +161,5 @@ function toggleButton(el, state)
 }**/
 
 function checkDatesRangeOverlap(startA,endA,startB,endB) {
-    return (new Date(startA).getTime() <= new Date(endB).getTime()) && (new Date(endA).getTime() >= new Date(startB).getTime());
+    return (new Date(startA).getTime() < new Date(endB).getTime()) && (new Date(endA).getTime() > new Date(startB).getTime());
 }

@@ -22,22 +22,26 @@ planningPHPTourApp.directive('fullcalendar', ['fullCalendarService','eventHandle
                 firstHour:9,
                 minTime:9,
                 maxTime:18,
+                slotEventOverlap: false,
                 h: 2500,
-                timeFormat: 'H(:mm)',
+                timeFormat: 'H:mm',
                 columnFormat: {
                     week: 'dddd dd MMMM'
                 },
                 axisFormat: 'HH:mm',
-                dayNames: ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'],
-                dayNamesShort: ['Lun','Mar','Mer','Jeu','Thu','Ven','Sam','Dim'],
+                dayNames: ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'],
+                dayNamesShort: ['Dim','Lun','Mar','Mer','Jeu','Thu','Ven','Sam'],
                 monthNames : ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'],
                 eventClick: function(event, jsEvent, view) {
 					
 					//modification de la classe de l'évènement via le service calendar
-					fullCalendarService.changeClassEvent(scope.selected,'');
-					if(event.id != scope.selected)
-						fullCalendarService.changeClassEvent(event.id,'calendarSelect');
-						
+
+					if(event.className != fullCalendarService.SAVED_CLASS && event.className != fullCalendarService.CONFLICT_CLASS)
+					{
+						fullCalendarService.changeClassEvent(scope.selected,'');
+						if(event.id != scope.selected)
+							fullCalendarService.changeClassEvent(event.id,'calendarSelect');
+					}	
 					//utilisation des events permet de decoupler le controlleur du fonctionnement de la vue
 					//le controlleur n'a pas a connaitre comment la vue est contruite dans la mesure du possible
 					//c'est a la vue de définir un fonctionnement en fonction des données du controlleur	
@@ -52,7 +56,6 @@ planningPHPTourApp.directive('fullcalendar', ['fullCalendarService','eventHandle
 
             angular.element('#calendar').fullCalendar(config);
 
-
-        }
+            }
     }
 }]);
