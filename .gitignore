@@ -5,3 +5,5 @@ tools/npm-debug.log
 tools/phptour.png
 ### Data ###
 data
+### IDE ###
+.idea/

@@ -5,7 +5,8 @@
     "bootstrap": "~3.1.0",
     "angular": null,
     "fullcalendar":null,
-    "momentjs":null
+    "momentjs":null,
+    "icalendar": "https://github.com/kbwood/icalendar.git"
   },
   "private": true
 }
