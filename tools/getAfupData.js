@@ -91,7 +91,7 @@ casper.then(function() {
 			function conference(id,name,date,horaire,salle,detail,conferenciers) {
 				var img_pattern = /<img.+?src=[\"'](.+?)[\"'].*?>/;
 				this.id = id;
-				this.name = name;//sanitize(name);
+				this.name = sanitize(name);
 				// if(this.id == 983) {
 				// 	this.name = name;
 				// }
