@@ -40,7 +40,7 @@ planningPHPTourApp.directive('fullcalendar', ['fullCalendarService','eventHandle
 					{
 						fullCalendarService.changeClassEvent(scope.selected,'');
 						if(event.id != scope.selected)
-							fullCalendarService.changeClassEvent(event.id,'calendarSelect');
+							fullCalendarService.changeClassEvent(event.id,fullCalendarService.SELECTED_CLASS);
 					}	
 					//utilisation des events permet de decoupler le controlleur du fonctionnement de la vue
 					//le controlleur n'a pas a connaitre comment la vue est contruite dans la mesure du possible
